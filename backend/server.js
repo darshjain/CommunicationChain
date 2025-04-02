@@ -61,7 +61,22 @@ app.post('/sendMessage', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+app.post("/getUserMessages", async (req, res) => {
+    try {
+        const { userAddress } = req.body;
+        // Call the contract function
+        // Example: const messages = await contract.getUserMessages(userAddress);
+
+        const messages = await contract.getUserMessages(userAddress);
+        res.json({ success: true, messages });
+    } catch (error) {
+        console.error("getUserMessages error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 
 app.listen(3001, () => {
     console.log('Backend listening on port 3001');
 });
+

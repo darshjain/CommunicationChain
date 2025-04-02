@@ -5,26 +5,21 @@ const api = axios.create({
     timeout: 10000,
 });
 
-// Request interceptor
+// Request interceptor (optional)
 api.interceptors.request.use(
     (config) => {
-        // Possibly attach user token, etc.
-        // config.headers.Authorization = `Bearer ${myToken}`;
+        // e.g., attach auth token if needed
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 // Response interceptor
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // You can handle specific error codes or messages
         if (error.response) {
             console.error("API error:", error.response.data);
-            // e.g. show a user-friendly message or trigger a global error store
         } else {
             console.error("Network/Server error:", error);
         }
