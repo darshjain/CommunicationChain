@@ -103,6 +103,7 @@ export default function Home() {
             });
 
             if (res.data.success) {
+                console.log(res.data.messages);
                 setMessagesList(res.data.messages);
                 setStatus(`Loaded ${res.data.messages.length} messages.`);
             } else {

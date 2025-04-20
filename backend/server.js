@@ -64,13 +64,27 @@ app.post("/getUserMessages", async (req, res) => {
         .status(400)
         .json({ success: false, error: "Missing userAddress" });
 
-    const messages = await contract.getUserMessages(userAddress);
+    // ↳ messages is an array of structs from the contract
+    const rawMessages = await contract.getUserMessages(userAddress);
+
+    // Convert every BigNumber / BigInt field
+    const messages = rawMessages.map(m => ({
+      sender: m.sender,
+      receiver: m.receiver,
+      cipherText: m.cipherText,
+      // ethers.js ‑– uint256 comes back as a BigNumber
+      timestamp: m.timestamp.toString()      // keep full precision
+      // or Number(m.timestamp) if you’re sure it fits in 53 bits
+    }));
+
     res.json({ success: true, messages });
+    console.log("Messages:", messages);
   } catch (err) {
     console.error("getUserMessages error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
 
 /* --------------- start server -------------- */
 const PORT = process.env.PORT || 3001;
