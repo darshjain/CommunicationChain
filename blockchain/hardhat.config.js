@@ -1,14 +1,20 @@
-/** @type import('hardhat/config').HardhatUserConfig */
+require("dotenv").config();
+require("@nomicfoundation/hardhat-toolbox");
+
 module.exports = {
-  solidity: "0.8.28",
+  solidity: "0.8.17",
   networks: {
-    goerli: {
-      url: "https://eth-goerli.g.alchemy.com/v2/YOUR_API_KEY",
-      accounts: ["0xPRIVATE_KEY"]
-    },
     mumbai: {
-      url: "https://polygon-mumbai.g.alchemy.com/v2/YOUR_API_KEY",
-      accounts: ["0xPRIVATE_KEY"]
+      url: process.env.MUMBAI_RPC,
+      accounts: [process.env.DEPLOYER_KEY],
+    },
+    goerli: {
+      url: process.env.GOERLI_RPC,
+      accounts: [process.env.DEPLOYER_KEY],
+    },
+    sepolia:{
+      url:process.env.SEPOLIA,
+      accounts:[process.env.DEPLOYER_KEY],
     }
-  }
+  },
 };

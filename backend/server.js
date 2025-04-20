@@ -1,82 +1,77 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { ethers } = require('ethers');
+/* -------------------------------------------
+   Message‑Dapp Relayer ‑ plain Node / Express
+   ------------------------------------------- */
+import "dotenv/config"; // loads .env
+import express from "express";
+import cors from "cors";
+import { ethers } from "ethers";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+/* ---------- read ABI from abi.json --------- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ABI = JSON.parse(fs.readFileSync(path.join(__dirname, "abi.json")));
+
+/* -------------- ethers setup --------------- */
+const provider = new ethers.JsonRpcProvider(process.env.PROVIDER_URL);
+const wallet = new ethers.Wallet(process.env.SPONSOR_PRIVATE_KEY, provider);
+const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, wallet);
+
+/* -------------- express app ---------------- */
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Load environment variables
-const PRIVATE_KEY = process.env.SPONSOR_PRIVATE_KEY;
-const PROVIDER_URL = process.env.PROVIDER_URL; // e.g. Alchemy or Infura
+/* ---------- helper: safeTx wrapper --------- */
+async function relayTx(res, fn) {
+  try {
+    const tx = await fn(); // send transaction
+    const receipt = await tx.wait();
+    return res.json({ success: true, txHash: receipt.transactionHash });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
 
-// Configure provider and wallet
-const provider = new ethers.providers.JsonRpcProvider(PROVIDER_URL);
-const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+/* ------------- route: register ------------- */
+app.post("/registerKey", async (req, res) => {
+  const { userAddress, publicKey } = req.body;
+  if (!userAddress || !publicKey)
+    return res.status(400).json({ success: false, error: "Missing params" });
 
-// ABI & contract address from your deploy step
-const contractABI = [
-    // Only the needed function fragments or the entire contract ABI
-    // e.g.:
-    "function registerEncryptionKey(string _publicKey) external",
-    "function sendMessage(address _receiver, string _cipherText) external",
-    "function encryptionPublicKeys(address) view returns (string)",
-    // etc...
-];
-const contractAddress = "YOUR_DEPLOYED_CONTRACT_ADDRESS";
-
-const contract = new ethers.Contract(contractAddress, contractABI, wallet);
-
-// Example route: relay registerEncryptionKey
-app.post('/registerKey', async (req, res) => {
-    try {
-        const { userAddress, publicKey } = req.body;
-        // Here, you'd normally verify that the request is signed by `userAddress`.
-        // For a simple PoC, you might skip verification.
-
-        // Make the contract call from the sponsor wallet
-        const tx = await contract.registerEncryptionKey(publicKey);
-        const receipt = await tx.wait();
-
-        res.json({ success: true, txHash: receipt.transactionHash });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: error.message });
-    }
+  // NOTE: add signature‑verification here if you want
+  await relayTx(res, () => contract.registerEncryptionKey(publicKey));
 });
 
-// Example route: relay sendMessage
-app.post('/sendMessage', async (req, res) => {
-    try {
-        const { sender, receiver, cipherText } = req.body;
-        // Similarly, you might verify the request is from `sender`.
+/* ------------- route: sendMessage ---------- */
+app.post("/sendMessage", async (req, res) => {
+  const { sender, receiver, cipherText } = req.body;
+  if (!sender || !receiver || !cipherText)
+    return res.status(400).json({ success: false, error: "Missing params" });
 
-        const tx = await contract.sendMessage(receiver, cipherText);
-        const receipt = await tx.wait();
-
-        res.json({ success: true, txHash: receipt.transactionHash });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, error: error.message });
-    }
+  await relayTx(res, () => contract.sendMessage(receiver, cipherText));
 });
+
+/* ---------- route: getUserMessages --------- */
 app.post("/getUserMessages", async (req, res) => {
-    try {
-        const { userAddress } = req.body;
-        // Call the contract function
-        // Example: const messages = await contract.getUserMessages(userAddress);
+  try {
+    const { userAddress } = req.body;
+    if (!userAddress)
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing userAddress" });
 
-        const messages = await contract.getUserMessages(userAddress);
-        res.json({ success: true, messages });
-    } catch (error) {
-        console.error("getUserMessages error:", error);
-        res.status(500).json({ success: false, error: error.message });
-    }
+    const messages = await contract.getUserMessages(userAddress);
+    res.json({ success: true, messages });
+  } catch (err) {
+    console.error("getUserMessages error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-
-app.listen(3001, () => {
-    console.log('Backend listening on port 3001');
-});
-
+/* --------------- start server -------------- */
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`Relayer backend running on :${PORT}`));
