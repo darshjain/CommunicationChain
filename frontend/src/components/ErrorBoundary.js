@@ -7,12 +7,12 @@ export class ErrorBoundary extends React.Component {
     }
 
     static getDerivedStateFromError(error) {
-        // Update state so next render shows fallback UI
+
         return { hasError: true, error };
     }
 
     componentDidCatch(error, errorInfo) {
-        // Log error to an error reporting service if desired
+
         console.error("Uncaught error:", error, errorInfo);
     }
 

@@ -10,14 +10,14 @@ export default function Home() {
     const [receiverAddress, setReceiverAddress] = useState("");
     const [message, setMessage] = useState("");
 
-    // For displaying message history
+
     const [messagesList, setMessagesList] = useState([]);
 
-    // Status & Error
+
     const [status, setStatus] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
-    // 1. Generate key pair (dummy demonstration)
+
     const generateKeys = () => {
         try {
             setErrorMessage("");
@@ -30,7 +30,7 @@ export default function Home() {
             ).join("");
 
             setMyPrivateKey(privateKeyHex);
-            setMyEncryptionKey(`${privateKeyHex}-PUB`); // naive "public key"
+            setMyEncryptionKey(`${privateKeyHex}-PUB`);
             setStatus("Keys generated successfully.");
         } catch (err) {
             console.error(err);
@@ -39,7 +39,7 @@ export default function Home() {
         }
     };
 
-    // 2. Register public key via backend (which relays to contract)
+
     const registerKey = async () => {
         try {
             setErrorMessage("");
@@ -63,13 +63,13 @@ export default function Home() {
         }
     };
 
-    // 3. Send an encrypted message
+
     const sendEncryptedMessage = async () => {
         try {
             setErrorMessage("");
             setStatus("Sending message...");
 
-            // For demonstration, let's pretend we have the receiver's pubkey
+
             const receiverPubKey = `${receiverAddress}-PUB`;
             const cipherText = `ENCRYPTED(${message})WITH(${receiverPubKey})`;
 
@@ -92,7 +92,7 @@ export default function Home() {
         }
     };
 
-    // 4. Load message history for this user
+
     const loadMessages = async () => {
         try {
             setErrorMessage("");
