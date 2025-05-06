@@ -5,7 +5,7 @@ async function main() {
   console.log(MessageDapp)
   const messageDapp = await MessageDapp.deploy();
   //await messageDapp.deployed();
-  await messageDapp.waitForDeployment(); // ✅ Proper way to wait for it to be mined
+  await messageDapp.waitForDeployment();
 
   console.log("MessageDapp deployed to:", messageDapp.address);
 }
